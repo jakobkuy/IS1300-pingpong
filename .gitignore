@@ -1,0 +1,27 @@
+# STM32CubeIDE Build directories
+Debug/
+Release/
+
+# Build artifacts
+*.o
+*.d
+*.su
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+
+# macOS
+.DS_Store
+
+# IDE temporary files
+*.launch
+*.tmp
+
+# Keep these (needed for project):
+# .cproject
+# .project
+# .settings/
+# .mxproject
+# *.ioc
