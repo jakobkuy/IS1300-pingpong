@@ -22,6 +22,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "leds.h"
+#include "button.h"
+#include "timer.h"
+#include "score.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,6 +54,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
+void ping_pong_game(void);
 void test_leds(void);
 /* USER CODE END PFP */
 
@@ -90,8 +94,13 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  leds_init();
-  test_leds();  // Run LED test program
+  leds_init();      // Initialize LED control module
+  button_init();    // Initialize button handling module
+
+  // Uncomment the line below to run the LED test instead of the game
+  // test_leds();
+
+  ping_pong_game();  // Start the ping-pong game
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -273,12 +282,288 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 /**
+ * ===========================================================================
+ *                          PING-PONG GAME
+ * ===========================================================================
+ *
+ * Game Rules:
+ * -----------
+ * 1. The "ball" (lit LED) moves from one side of the board to the other
+ * 2. Left player uses LEFT button (PB15) when ball reaches their end (LED 1)
+ * 3. Right player uses RIGHT button (PC8) when ball reaches their end (LED 8)
+ * 4. If button is pressed at the correct time, ball bounces back
+ * 5. If player misses, opponent scores a point
+ * 6. First player to reach WINNING_SCORE wins the game
+ * 7. Game displays score after each point and winner at the end
+ *
+ * Ball Physics:
+ * -------------
+ * - Ball starts at center and moves in random direction
+ * - Ball speed increases slightly after each successful hit (up to max)
+ * - Ball speed resets after a miss
+ * - Hit timing window: Must press button when ball is at end position
+ *
+ * Visual Feedback:
+ * ----------------
+ * - Moving ball: Single LED travels across the board
+ * - Successful hit: Brief flash of all LEDs
+ * - Miss: Flash all LEDs 3 times rapidly
+ * - Score display: LEDs light up from each player's side
+ * - Winner: Flashing LEDs on winner's side
+ */
+
+/* Game configuration constants */
+#define WINNING_SCORE      5    // Points needed to win the game
+#define INITIAL_SPEED    200    // Starting ball speed (milliseconds per LED)
+#define MIN_SPEED        100    // Fastest ball speed (after multiple hits)
+#define SPEED_DECREASE    20    // Speed increase per hit (lower = faster)
+#define SCORE_DISPLAY_TIME 2000 // How long to show score (milliseconds)
+
+/* Game state enumeration */
+typedef enum {
+    GAME_START,          // Initial game state
+    BALL_MOVING_RIGHT,   // Ball traveling left to right
+    BALL_MOVING_LEFT,    // Ball traveling right to left
+    POINT_SCORED,        // A point was just scored
+    GAME_OVER            // Game has ended
+} GameState;
+
+/**
+ * Main ping-pong game function
+ *
+ * This function contains the complete game loop and never returns.
+ * It manages all game states, ball movement, collision detection,
+ * scoring, and visual feedback.
+ */
+void ping_pong_game(void) {
+    /* Game state variables */
+    GameState state = GAME_START;
+    int ball_position = 4;          // Current LED position (1-8)
+    int ball_direction = 1;         // 1 = moving right, -1 = moving left
+    uint32_t ball_speed = INITIAL_SPEED;  // Current ball speed (ms per LED)
+    uint8_t left_score = 0;         // Left player's score
+    uint8_t right_score = 0;        // Right player's score
+    int button_pressed = 0;         // Which button was pressed
+
+    /* Game initialization */
+    leds_clear();
+    HAL_Delay(500);
+
+    /* Flash all LEDs 3 times to signal game start */
+    for (int i = 0; i < 3; i++) {
+        leds_all();
+        HAL_Delay(200);
+        leds_clear();
+        HAL_Delay(200);
+    }
+
+    HAL_Delay(500);
+
+    /* Main game loop - runs forever */
+    while (1) {
+        switch (state) {
+
+        /* ----------------------------------------------------------------
+         * GAME_START: Initialize new round
+         * ---------------------------------------------------------------- */
+        case GAME_START:
+            // Reset ball to center position
+            ball_position = 4;
+
+            // Randomly choose starting direction based on system tick
+            if ((HAL_GetTick() % 2) == 0) {
+                ball_direction = 1;   // Move right
+                state = BALL_MOVING_RIGHT;
+            } else {
+                ball_direction = -1;  // Move left
+                state = BALL_MOVING_LEFT;
+            }
+
+            // Reset ball speed for new round
+            ball_speed = INITIAL_SPEED;
+            break;
+
+        /* ----------------------------------------------------------------
+         * BALL_MOVING_RIGHT: Ball traveling toward right player
+         * ---------------------------------------------------------------- */
+        case BALL_MOVING_RIGHT:
+            // Display ball at current position
+            leds_index(ball_position);
+
+            // Start non-blocking timer for ball movement
+            timer_init(ball_speed);
+
+            // Wait for timer to expire while checking for button presses
+            while (!timer_now()) {
+                button_pressed = button_read();
+
+                // Check if right player pressed button at the right time
+                if (button_pressed == RIGHT_BUTTON && ball_position == 8) {
+                    // Successful hit! Ball bounces back
+                    ball_direction = -1;  // Reverse direction
+                    state = BALL_MOVING_LEFT;
+
+                    // Increase ball speed (decrease delay) for more challenge
+                    if (ball_speed > MIN_SPEED) {
+                        ball_speed -= SPEED_DECREASE;
+                    }
+
+                    // No visual feedback - just continue playing
+                    break;  // Exit timer loop to continue with new state
+                }
+                // Check for early/wrong button press (penalty could be added here)
+                else if (button_pressed == RIGHT_BUTTON && ball_position != 8) {
+                    // Right player pressed too early - ignored in this version
+                    // Could add penalty: left_score++; state = POINT_SCORED;
+                }
+            }
+
+            // Timer expired - move ball to next position
+            if (state == BALL_MOVING_RIGHT) {  // Still moving right
+                ball_position++;
+
+                // Check if ball reached right end without being hit
+                if (ball_position > 8) {
+                    // Right player missed! Left player scores
+                    left_score++;
+                    state = POINT_SCORED;
+
+                    // Visual feedback: flash all LEDs rapidly
+                    for (int i = 0; i < 3; i++) {
+                        leds_all();
+                        HAL_Delay(100);
+                        leds_clear();
+                        HAL_Delay(100);
+                    }
+                }
+            }
+            break;
+
+        /* ----------------------------------------------------------------
+         * BALL_MOVING_LEFT: Ball traveling toward left player
+         * ---------------------------------------------------------------- */
+        case BALL_MOVING_LEFT:
+            // Display ball at current position
+            leds_index(ball_position);
+
+            // Start non-blocking timer for ball movement
+            timer_init(ball_speed);
+
+            // Wait for timer to expire while checking for button presses
+            while (!timer_now()) {
+                button_pressed = button_read();
+
+                // Check if left player pressed button at the right time
+                if (button_pressed == LEFT_BUTTON && ball_position == 1) {
+                    // Successful hit! Ball bounces back
+                    ball_direction = 1;  // Reverse direction
+                    state = BALL_MOVING_RIGHT;
+
+                    // Increase ball speed (decrease delay) for more challenge
+                    if (ball_speed > MIN_SPEED) {
+                        ball_speed -= SPEED_DECREASE;
+                    }
+
+                    // No visual feedback - just continue playing
+                    break;  // Exit timer loop to continue with new state
+                }
+                // Check for early/wrong button press (penalty could be added here)
+                else if (button_pressed == LEFT_BUTTON && ball_position != 1) {
+                    // Left player pressed too early - ignored in this version
+                    // Could add penalty: right_score++; state = POINT_SCORED;
+                }
+            }
+
+            // Timer expired - move ball to next position
+            if (state == BALL_MOVING_LEFT) {  // Still moving left
+                ball_position--;
+
+                // Check if ball reached left end without being hit
+                if (ball_position < 1) {
+                    // Left player missed! Right player scores
+                    right_score++;
+                    state = POINT_SCORED;
+
+                    // Visual feedback: flash all LEDs rapidly
+                    for (int i = 0; i < 3; i++) {
+                        leds_all();
+                        HAL_Delay(100);
+                        leds_clear();
+                        HAL_Delay(100);
+                    }
+                }
+            }
+            break;
+
+        /* ----------------------------------------------------------------
+         * POINT_SCORED: Handle scoring and check for game end
+         * ---------------------------------------------------------------- */
+        case POINT_SCORED:
+            // Display current score
+            show_score(right_score, left_score, SCORE_DISPLAY_TIME);
+
+            // Check if either player has won
+            if (left_score >= WINNING_SCORE) {
+                // Left player wins!
+                show_winner(0, 3000);  // 0 = left player
+                state = GAME_OVER;
+            } else if (right_score >= WINNING_SCORE) {
+                // Right player wins!
+                show_winner(1, 3000);  // 1 = right player
+                state = GAME_OVER;
+            } else {
+                // Game continues - start new round
+                state = GAME_START;
+            }
+            break;
+
+        /* ----------------------------------------------------------------
+         * GAME_OVER: End of game - wait for reset or restart
+         * ---------------------------------------------------------------- */
+        case GAME_OVER:
+            // Game has ended - display final score one more time
+            HAL_Delay(1000);
+            show_score(right_score, left_score, 3000);
+
+            // Reset scores and restart game
+            left_score = 0;
+            right_score = 0;
+            state = GAME_START;
+
+            // Long delay before starting new game
+            HAL_Delay(2000);
+
+            // Flash LEDs to signal new game starting
+            for (int i = 0; i < 2; i++) {
+                leds_all();
+                HAL_Delay(300);
+                leds_clear();
+                HAL_Delay(300);
+            }
+            break;
+
+        default:
+            // Should never reach here - reset to safe state
+            state = GAME_START;
+            break;
+        }
+    }
+}
+
+/**
  * LED Test Program
- * Tests all LED functions:
- * 1. Cycle through LEDs 1-8 individually (slow)
- * 2. Cycle through LEDs 1-8 individually (fast)
- * 3. Flash all LEDs on/off
- * 4. Repeat
+ *
+ * This function tests all LED hardware connections by cycling through
+ * various patterns. Useful for debugging and verifying hardware setup.
+ *
+ * Test Sequence:
+ * 1. Cycle through LEDs 1-8 individually (slow - 500ms each)
+ * 2. Cycle through LEDs 1-8 individually (fast - 100ms each)
+ * 3. Cycle backwards through LEDs 8-1 (fast - 100ms each)
+ * 4. Flash all LEDs on/off 3 times
+ * 5. Repeat sequence
+ *
+ * To use: Uncomment the test_leds() call in main() and comment out ping_pong_game()
  */
 void test_leds(void)
 {
