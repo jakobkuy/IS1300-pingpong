@@ -46,16 +46,16 @@ This is an embedded systems project implementing a **ping-pong game** on an STM3
 
 The 8 LEDs are mapped to various GPIO pins across three ports:
 
-| LED Position | Description | GPIO Port | GPIO Pin | Physical Pin |
-|--------------|-------------|-----------|----------|--------------|
-| LED 1 | Leftmost | GPIOB | Pin 1 | PB1 |
-| LED 2 | | GPIOB | Pin 2 | PB2 |
-| LED 3 | | GPIOB | Pin 11 | PB11 |
-| LED 4 | Center-left | GPIOB | Pin 12 | PB12 |
-| LED 5 | Center-right | GPIOA | Pin 11 | PA11 |
-| LED 6 | | GPIOA | Pin 12 | PA12 |
-| LED 7 | | GPIOC | Pin 5 | PC5 |
-| LED 8 | Rightmost | GPIOC | Pin 6 | PC6 |
+| LED Position | Description   | GPIO Port | GPIO Pin | Physical Pin |
+|--------------|---------------|-----------|----------|--------------|
+| LED 1        | Leftmost      | GPIOB     | Pin 1    | PB1          |
+| LED 2        |               | GPIOB     | Pin 2    | PB2          |
+| LED 3        |               | GPIOB     | Pin 11   | PB11         |
+| LED 4        | Center-left   | GPIOB     | Pin 12   | PB12         |
+| LED 5        | Center-right  | GPIOA     | Pin 11   | PA11         |
+| LED 6        |               | GPIOA     | Pin 12   | PA12         |
+| LED 7        |               | GPIOC     | Pin 5    | PC5          |
+| LED 8        | Rightmost     | GPIOC     | Pin 6    | PC6          |
 
 **LED Layout:**
 ```
@@ -70,10 +70,10 @@ All LEDs are configured as:
 
 ### Button Configuration (2 Buttons)
 
-| Button | Player | GPIO Port | GPIO Pin | Active State |
-|--------|--------|-----------|----------|--------------|
-| Left Button | Left Player | GPIOB | Pin 15 (PB15) | Active LOW |
-| Right Button | Right Player | GPIOC | Pin 8 (PC8) | Active LOW |
+| Button       | Player       | GPIO Port | GPIO Pin      | Active State |
+|--------------|--------------|-----------|---------------|--------------|
+| Left Button  | Left Player  | GPIOB     | Pin 15 (PB15) | Active LOW   |
+| Right Button | Right Player | GPIOC     | Pin 8 (PC8)   | Active LOW   |
 
 Both buttons are configured with:
 - Mode: `GPIO_MODE_INPUT`
@@ -291,17 +291,17 @@ The game is implemented as a **finite state machine** with 5 states. The state m
 
 ### State Transition Table
 
-| Current State | Event | Next State | Actions |
-|---------------|-------|------------|---------|
-| GAME_START | Random = Right | BALL_MOVING_RIGHT | Reset ball position, set direction |
-| GAME_START | Random = Left | BALL_MOVING_LEFT | Reset ball position, set direction |
-| BALL_MOVING_RIGHT | Right button at LED 8 | BALL_MOVING_LEFT | Reverse direction, increase speed |
-| BALL_MOVING_RIGHT | Ball position > 8 | POINT_SCORED | Left player scores, flash LEDs |
-| BALL_MOVING_LEFT | Left button at LED 1 | BALL_MOVING_RIGHT | Reverse direction, increase speed |
-| BALL_MOVING_LEFT | Ball position < 1 | POINT_SCORED | Right player scores, flash LEDs |
-| POINT_SCORED | Score < 5 | GAME_START | Continue game, new round |
-| POINT_SCORED | Score >= 5 | GAME_OVER | Show winner animation |
-| GAME_OVER | After animations | GAME_START | Reset scores, restart game |
+| Current State     | Event                 | Next State        | Actions                              |
+|-------------------|-----------------------|-------------------|--------------------------------------|
+| GAME_START        | Random = Right        | BALL_MOVING_RIGHT | Reset ball position, set direction   |
+| GAME_START        | Random = Left         | BALL_MOVING_LEFT  | Reset ball position, set direction   |
+| BALL_MOVING_RIGHT | Right button at LED 8 | BALL_MOVING_LEFT  | Reverse direction, increase speed    |
+| BALL_MOVING_RIGHT | Ball position > 8     | POINT_SCORED      | Left player scores, flash LEDs       |
+| BALL_MOVING_LEFT  | Left button at LED 1  | BALL_MOVING_RIGHT | Reverse direction, increase speed    |
+| BALL_MOVING_LEFT  | Ball position < 1     | POINT_SCORED      | Right player scores, flash LEDs      |
+| POINT_SCORED      | Score < 5             | GAME_START        | Continue game, new round             |
+| POINT_SCORED      | Score >= 5            | GAME_OVER         | Show winner animation                |
+| GAME_OVER         | After animations      | GAME_START        | Reset scores, restart game           |
 
 ---
 
@@ -548,15 +548,15 @@ Early or late presses are ignored (though penalty could be added).
 
 ### Visual Feedback
 
-| Event | Visual Effect |
-|-------|---------------|
-| Game Start | All LEDs flash 3 times (200ms on/off) |
-| Ball Movement | Single LED lit at ball position |
-| Successful Hit | Immediate direction change (no flash) |
-| Miss | All LEDs flash 3 times rapidly (100ms on/off) |
-| Point Scored | Score display (LEDs lit from each side) |
-| Winner | Winning side blinks 5 times + all LEDs finale |
-| Game Restart | All LEDs flash 2 times (300ms on/off) |
+| Event          | Visual Effect                                  |
+|----------------|------------------------------------------------|
+| Game Start     | All LEDs flash 3 times (200ms on/off)         |
+| Ball Movement  | Single LED lit at ball position                |
+| Successful Hit | Immediate direction change (no flash)          |
+| Miss           | All LEDs flash 3 times rapidly (100ms on/off)  |
+| Point Scored   | Score display (LEDs lit from each side)        |
+| Winner         | Winning side blinks 5 times + all LEDs finale  |
+| Game Restart   | All LEDs flash 2 times (300ms on/off)          |
 
 ### Scoring System
 
