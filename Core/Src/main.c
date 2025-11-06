@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2025 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -64,9 +64,9 @@ void test_leds(void);
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+ * @brief  The application entry point.
+ * @retval int
+ */
 int main(void)
 {
 
@@ -115,24 +115,24 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
-  */
+   */
   if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
   {
     Error_Handler();
   }
 
   /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
+   * in the RCC_OscInitTypeDef structure.
+   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -149,9 +149,8 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+   */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -164,10 +163,10 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief USART2 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_USART2_UART_Init(void)
 {
 
@@ -195,14 +194,13 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
-
 }
 
 /**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief GPIO Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -284,171 +282,197 @@ static void MX_GPIO_Init(void)
 /* See GAME_GUIDE.md for game rules and instructions */
 
 /* Game configuration constants */
-#define WINNING_SCORE      5
-#define INITIAL_SPEED    200
-#define MIN_SPEED        100
-#define SPEED_DECREASE    20
+#define WINNING_SCORE 5
+#define INITIAL_SPEED 200
+#define MIN_SPEED 100
+#define SPEED_DECREASE 20
 #define SCORE_DISPLAY_TIME 2000
 
-typedef enum {
-    GAME_START,
-    BALL_MOVING_RIGHT,
-    BALL_MOVING_LEFT,
-    POINT_SCORED,
-    GAME_OVER
+typedef enum
+{
+  GAME_START,
+  BALL_MOVING_RIGHT,
+  BALL_MOVING_LEFT,
+  POINT_SCORED,
+  GAME_OVER
 } GameState;
 
 /**
  * Main ping-pong game loop (never returns)
  */
-void ping_pong_game(void) {
-    GameState state = GAME_START;
-    int ball_position = 4;
-    int ball_direction = 1;
-    uint32_t ball_speed = INITIAL_SPEED;
-    uint8_t left_score = 0;
-    uint8_t right_score = 0;
-    int button_pressed = 0;
+void ping_pong_game(void)
+{
+  GameState state = GAME_START;
+  int ball_position = 4;
+  int ball_direction = 1;
+  uint32_t ball_speed = INITIAL_SPEED;
+  uint8_t left_score = 0;
+  uint8_t right_score = 0;
+  int button_pressed = 0;
 
+  leds_clear();
+  HAL_Delay(500);
+
+  /* Flash LEDs to signal game start */
+  for (int i = 0; i < 3; i++)
+  {
+    leds_all();
+    HAL_Delay(200);
     leds_clear();
-    HAL_Delay(500);
+    HAL_Delay(200);
+  }
 
-    /* Flash LEDs to signal game start */
-    for (int i = 0; i < 3; i++) {
-        leds_all();
-        HAL_Delay(200);
-        leds_clear();
-        HAL_Delay(200);
-    }
+  HAL_Delay(500);
 
-    HAL_Delay(500);
+  while (1)
+  {
+    switch (state)
+    {
 
-    while (1) {
-        switch (state) {
+    case GAME_START:
+      ball_position = 4;
 
-        case GAME_START:
-            ball_position = 4;
+      if ((HAL_GetTick() % 2) == 0)
+      {
+        ball_direction = 1;
+        state = BALL_MOVING_RIGHT;
+      }
+      else
+      {
+        ball_direction = -1;
+        state = BALL_MOVING_LEFT;
+      }
 
-            if ((HAL_GetTick() % 2) == 0) {
-                ball_direction = 1;
-                state = BALL_MOVING_RIGHT;
-            } else {
-                ball_direction = -1;
-                state = BALL_MOVING_LEFT;
-            }
+      ball_speed = INITIAL_SPEED;
+      break;
 
-            ball_speed = INITIAL_SPEED;
-            break;
+    case BALL_MOVING_RIGHT:
+      leds_index(ball_position);
+      timer_init(ball_speed);
 
-        case BALL_MOVING_RIGHT:
-            leds_index(ball_position);
-            timer_init(ball_speed);
+      while (!timer_now())
+      {
+        button_pressed = button_read();
 
-            while (!timer_now()) {
-                button_pressed = button_read();
+        if (button_pressed == RIGHT_BUTTON && ball_position == 8)
+        {
+          ball_direction = -1;
+          state = BALL_MOVING_LEFT;
 
-                if (button_pressed == RIGHT_BUTTON && ball_position == 8) {
-                    ball_direction = -1;
-                    state = BALL_MOVING_LEFT;
+          if (ball_speed > MIN_SPEED)
+          {
+            ball_speed -= SPEED_DECREASE;
+          }
 
-                    if (ball_speed > MIN_SPEED) {
-                        ball_speed -= SPEED_DECREASE;
-                    }
-
-                    break;
-                }
-            }
-
-            if (state == BALL_MOVING_RIGHT) {
-                ball_position++;
-
-                if (ball_position > 8) {
-                    left_score++;
-                    state = POINT_SCORED;
-
-                    for (int i = 0; i < 3; i++) {
-                        leds_all();
-                        HAL_Delay(100);
-                        leds_clear();
-                        HAL_Delay(100);
-                    }
-                }
-            }
-            break;
-
-        case BALL_MOVING_LEFT:
-            leds_index(ball_position);
-            timer_init(ball_speed);
-
-            while (!timer_now()) {
-                button_pressed = button_read();
-
-                if (button_pressed == LEFT_BUTTON && ball_position == 1) {
-                    ball_direction = 1;
-                    state = BALL_MOVING_RIGHT;
-
-                    if (ball_speed > MIN_SPEED) {
-                        ball_speed -= SPEED_DECREASE;
-                    }
-
-                    break;
-                }
-            }
-
-            if (state == BALL_MOVING_LEFT) {
-                ball_position--;
-
-                if (ball_position < 1) {
-                    right_score++;
-                    state = POINT_SCORED;
-
-                    for (int i = 0; i < 3; i++) {
-                        leds_all();
-                        HAL_Delay(100);
-                        leds_clear();
-                        HAL_Delay(100);
-                    }
-                }
-            }
-            break;
-
-        case POINT_SCORED:
-            show_score(right_score, left_score, SCORE_DISPLAY_TIME);
-
-            if (left_score >= WINNING_SCORE) {
-                show_winner(0, 3000);
-                state = GAME_OVER;
-            } else if (right_score >= WINNING_SCORE) {
-                show_winner(1, 3000);
-                state = GAME_OVER;
-            } else {
-                state = GAME_START;
-            }
-            break;
-
-        case GAME_OVER:
-            HAL_Delay(1000);
-            show_score(right_score, left_score, 3000);
-
-            left_score = 0;
-            right_score = 0;
-            state = GAME_START;
-
-            HAL_Delay(2000);
-
-            for (int i = 0; i < 2; i++) {
-                leds_all();
-                HAL_Delay(300);
-                leds_clear();
-                HAL_Delay(300);
-            }
-            break;
-
-        default:
-            state = GAME_START;
-            break;
+          break;
         }
+      }
+
+      if (state == BALL_MOVING_RIGHT)
+      {
+        ball_position++;
+
+        if (ball_position > 8)
+        {
+          left_score++;
+          state = POINT_SCORED;
+
+          for (int i = 0; i < 3; i++)
+          {
+            leds_all();
+            HAL_Delay(100);
+            leds_clear();
+            HAL_Delay(100);
+          }
+        }
+      }
+      break;
+
+    case BALL_MOVING_LEFT:
+      leds_index(ball_position);
+      timer_init(ball_speed);
+
+      while (!timer_now())
+      {
+        button_pressed = button_read();
+
+        if (button_pressed == LEFT_BUTTON && ball_position == 1)
+        {
+          ball_direction = 1;
+          state = BALL_MOVING_RIGHT;
+
+          if (ball_speed > MIN_SPEED)
+          {
+            ball_speed -= SPEED_DECREASE;
+          }
+
+          break;
+        }
+      }
+
+      if (state == BALL_MOVING_LEFT)
+      {
+        ball_position--;
+
+        if (ball_position < 1)
+        {
+          right_score++;
+          state = POINT_SCORED;
+
+          for (int i = 0; i < 3; i++)
+          {
+            leds_all();
+            HAL_Delay(100);
+            leds_clear();
+            HAL_Delay(100);
+          }
+        }
+      }
+      break;
+
+    case POINT_SCORED:
+      show_score(right_score, left_score, SCORE_DISPLAY_TIME);
+
+      if (left_score >= WINNING_SCORE)
+      {
+        show_winner(0, 3000);
+        state = GAME_OVER;
+      }
+      else if (right_score >= WINNING_SCORE)
+      {
+        show_winner(1, 3000);
+        state = GAME_OVER;
+      }
+      else
+      {
+        state = GAME_START;
+      }
+      break;
+
+    case GAME_OVER:
+      HAL_Delay(1000);
+      show_score(right_score, left_score, 3000);
+
+      left_score = 0;
+      right_score = 0;
+      state = GAME_START;
+
+      HAL_Delay(2000);
+
+      for (int i = 0; i < 2; i++)
+      {
+        leds_all();
+        HAL_Delay(300);
+        leds_clear();
+        HAL_Delay(300);
+      }
+      break;
+
+    default:
+      state = GAME_START;
+      break;
     }
+  }
 }
 
 /**
@@ -457,46 +481,50 @@ void ping_pong_game(void) {
  */
 void test_leds(void)
 {
-    while(1)
+  while (1)
+  {
+    for (int i = 1; i <= 8; i++)
     {
-        for(int i = 1; i <= 8; i++) {
-            leds_index(i);
-            HAL_Delay(500);
-        }
-
-        leds_clear();
-        HAL_Delay(500);
-
-        for(int i = 1; i <= 8; i++) {
-            leds_index(i);
-            HAL_Delay(100);
-        }
-
-        for(int i = 8; i >= 1; i--) {
-            leds_index(i);
-            HAL_Delay(100);
-        }
-
-        leds_clear();
-        HAL_Delay(500);
-
-        for(int i = 0; i < 3; i++) {
-            leds_all();
-            HAL_Delay(300);
-            leds_clear();
-            HAL_Delay(300);
-        }
-
-        HAL_Delay(1000);
+      leds_index(i);
+      HAL_Delay(500);
     }
+
+    leds_clear();
+    HAL_Delay(500);
+
+    for (int i = 1; i <= 8; i++)
+    {
+      leds_index(i);
+      HAL_Delay(100);
+    }
+
+    for (int i = 8; i >= 1; i--)
+    {
+      leds_index(i);
+      HAL_Delay(100);
+    }
+
+    leds_clear();
+    HAL_Delay(500);
+
+    for (int i = 0; i < 3; i++)
+    {
+      leds_all();
+      HAL_Delay(300);
+      leds_clear();
+      HAL_Delay(300);
+    }
+
+    HAL_Delay(1000);
+  }
 }
 
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -509,12 +537,12 @@ void Error_Handler(void)
 }
 #ifdef USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
