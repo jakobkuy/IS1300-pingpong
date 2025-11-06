@@ -35,31 +35,25 @@ static const LED_Pin led_pins[8] = {
 };
 
 /**
- * Initialize all 8 LED GPIO pins
- * Note: GPIO pins are configured by STM32CubeMX in main.c
- * This function can be used for additional initialization if needed
+ * Initialize LED control module
+ * Note: GPIO pins configured by MX_GPIO_Init() in main.c
  */
 void leds_init(void) {
-    // GPIO initialization is handled by MX_GPIO_Init() in main.c
-    // Turn off all LEDs initially
     leds_clear();
 }
 
 /**
- * Light up LED at position i (1-8) and turn off all others
+ * Light up LED at position i (1-8), turn off all others
  */
 void leds_index(int i) {
-    // Validate input range
     if (i < 1 || i > 8) {
-        return;  // Invalid index, do nothing
+        return;
     }
 
-    // Turn off all LEDs first
     for (int j = 0; j < 8; j++) {
         HAL_GPIO_WritePin(led_pins[j].port, led_pins[j].pin, GPIO_PIN_RESET);
     }
 
-    // Turn on the specified LED (convert 1-8 to 0-7 array index)
     HAL_GPIO_WritePin(led_pins[i-1].port, led_pins[i-1].pin, GPIO_PIN_SET);
 }
 
